@@ -19,7 +19,7 @@ def calculate_distance(listes: list) -> list[int]:
     return distances
 
 def main():
-    listes = import_problem_input('input_1.txt')
+    listes = import_problem_input('input.txt')
     distances = calculate_distance(sort_lists(listes))
     print(sum(distances))
 

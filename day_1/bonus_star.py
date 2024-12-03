@@ -14,7 +14,7 @@ def process_lists(listes: list) -> list:
     return result
 
 def main():
-    listes = import_problem_input('input_1.txt')
+    listes = import_problem_input('input.txt')
     processed_lists = process_lists(listes)
     print(sum(processed_lists))
 
