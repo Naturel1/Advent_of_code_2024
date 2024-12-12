@@ -163,4 +163,3 @@ cython_debug/
 
 # ignoring input file
 input*.txt
-output*.txt
