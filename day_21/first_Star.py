@@ -1,109 +1,60 @@
-import argparse
+KEYPAD = {'7':(0,0),'8':(0,1),'9':(0,2),
+          '4':(1,0),'5':(1,1),'6':(1,2),
+          '1':(2,0), '2':(2,1),'3':(2,2),
+          '0':(3,1), 'A':(3,2)}
+KEYPAD_2 = [['7','8','9'],
+            ['4','5','6'],
+            ['1','2','3'],
+            [None,'0','A']]
+ROBOT_KEYPAD = {'^':(0,1),'<':(1,0),'>':(1,2),'v':(1,1), 'A':(0,2)}
+ROBOT_KEYPAD_2 = [[None, '^', 'A'],
+                ['<', 'v', '>']]
 
-from functools import cache
-from heapq import heappop, heappush
-from pathlib import Path
-from time import time
+def import_data(path: str) -> list[list[str]]:
+    result = []
+    with open(path, 'r') as file:
+        for line in file:
+            result.append(list(line.strip()))
+        return result
 
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--part", "-p",
-        type=int,
-        choices={1, 2},
-        help="Set puzzle part"
-    )
-    args = parser.parse_args()
-    if not args.part:
-        parser.error("Which part are you solving?")
-    return args
+def find_moves(code: list[str]) -> list[str]:
+    result = []
+    if code[0].isdigit():
+        pad = KEYPAD
+    else:
+        pad = ROBOT_KEYPAD
+    y, x = pad['A']
+    for digit in code:
+        ay, ax = pad[digit]
+        if  ay < y:
+            result.extend(['^'] * abs(ay-y))
+        elif ay > y:
+            result.extend(['v'] * abs(ay-y))
+        if ax > x:
+            result.extend(['>'] * abs(ax-x))
+        elif ax < x:
+            result.extend(['<'] * abs(ax-x))
+        result.append('A')
+        if digit != 'A':
+            y, x = ay, ax
+    return result
 
-NUM_KB= {
-    1: "0",
-    2: "A",
-    1j: "1",
-    1 + 1j: "2",
-    2 + 1j: "3",
-    2j: "4",
-    1 + 2j: "5",
-    2 + 2j: "6",
-    3j: "7",
-    1 + 3j: "8",
-    2 + 3j: "9",
-}
-
-DIR_KB = {
-    0: "<",
-    1: "v",
-    2: ">",
-    1 + 1j: "^",
-    2 + 1j: "A",
-}
-
-DIR_MAP = {
-    "<": -1,
-    "v": -1j,
-    ">": 1,
-    "^": 1j,
-}
-
-def is_safe(position: complex, path: str, mapping: dict) -> bool:
-    for direction in path:
-        if mapping.get(position + DIR_MAP[direction]) is None:
-            return False
-        position += DIR_MAP[direction]
-    return True
-
-@cache
-def move_to_kb(position: complex, key: str, *, is_directionnal: bool = True) -> tuple:
-    mapping = DIR_KB if is_directionnal else NUM_KB
-    queue = []
-    options = []  # set()
-    seen = {}
-    heappush(queue, (0, str(position), ""))
-    while queue:
-        length, str_pos, path = heappop(queue)
-        pos = complex(str_pos)
-        if mapping[pos] == key:
-            opti_path = "".join(sorted(path))
-            if is_safe(position, opti_path, mapping):
-                options.append(opti_path + "A")
-            if opti_path[::-1] != opti_path and is_safe(position, opti_path[::-1], mapping):
-                options.append(opti_path[::-1] + "A")
-            if not options:
-                options.append(path + "A")
-            return pos, options
-        seen[pos] = True
-        for k, d in DIR_MAP.items():
-            if mapping.get(pos + d) is not None and pos + d not in seen:
-                heappush(queue, (length + 1, str(pos + d), path + k))
-    return position, options
-
-@cache
-def iterate_moves(code: str, loop: int = 0) -> set:
-    is_directionnal = False
-    for c in code:
-        if c in "<^>v":
-            is_directionnal = True
-            break
-    position = 2 + 1j if is_directionnal else 2
-    res = 0
-    for c in code:
-        position, options = move_to_kb(position, c, is_directionnal=is_directionnal)
-        if not loop:
-            res += min([len(opt) for opt in options])
-        else:
-            res += min(iterate_moves(opt, loop - 1) for opt in options)
-    return res
-
+def main():
+    data = import_data('input.txt')
+    print(data)
+    final = {}
+    for code in data:
+        print(''.join(code))
+        robot_1 = find_moves(code)
+        print(''.join(robot_1))
+        robot_2 = find_moves(robot_1)
+        print(''.join(robot_2))
+        final[''.join(code)] = find_moves(robot_2)
+        print(''.join(final[''.join(code)]))
+    result = 0
+    for key, value in final.items():
+        print(f"{int(key[0:-1])}: {len(value)} = {len(value) * int(key[0:-1])}")
+        result += len(value) * int(key[0:-1])
+    print(f"Part 1: {result}")
 if __name__ == "__main__":
-    args = _parse_args()
-    t = time()
-    with Path(f"input.txt").open("r") as file:
-        data = file.read().split("\n")
-    print(sum(
-        int(code[:-1]) * iterate_moves(code, 2 if args.part == 1 else 25)
-        for code in data
-        )
-    )
-    print(time() - t)
+    main()
