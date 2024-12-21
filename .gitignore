@@ -166,3 +166,5 @@ input*.txt
 
 # mac
 .DS_Store
+
+soluce.py
